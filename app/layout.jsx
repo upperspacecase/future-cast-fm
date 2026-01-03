@@ -9,23 +9,6 @@ export const metadata = {
   title: "FUTURECAST.FM",
   description: "FutureCast.fm is about the futures we're building. The ones worth fighting for. And your role in making them real.",
   metadataBase: new URL('https://futurecast.fm'),
-  openGraph: {
-    title: 'FUTURECAST.FM',
-    description: "FutureCast.fm is about the futures we're building. The ones worth fighting for. And your role in making them real.",
-    url: 'https://futurecast.fm',
-    siteName: 'FUTURECAST.FM',
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'FUTURECAST.FM',
-    description: "FutureCast.fm is about the futures we're building. The ones worth fighting for. And your role in making them real.",
-  },
-  icons: {
-    icon: '/icon.png',
-    apple: '/apple-icon.png',
-  },
 }
 
 export default function RootLayout({
