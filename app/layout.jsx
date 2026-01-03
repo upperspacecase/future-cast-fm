@@ -6,25 +6,25 @@ const _archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400", variabl
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
 export const metadata = {
-  title: "FutureCast.fm - Exploring Optimistic Futures",
-  description: "A podcast exploring optimistic futures across technology, society, environment, and innovation.",
-  generator: "v0.app",
+  title: "FUTURECAST.FM",
+  description: "FutureCast.fm is about the futures we're building. The ones worth fighting for. And your role in making them real.",
+  metadataBase: new URL('https://futurecast.fm'),
+  openGraph: {
+    title: 'FUTURECAST.FM',
+    description: "FutureCast.fm is about the futures we're building. The ones worth fighting for. And your role in making them real.",
+    url: 'https://futurecast.fm',
+    siteName: 'FUTURECAST.FM',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'FUTURECAST.FM',
+    description: "FutureCast.fm is about the futures we're building. The ones worth fighting for. And your role in making them real.",
+  },
   icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
-    apple: "/apple-icon.png",
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
   },
 }
 
