@@ -25,6 +25,7 @@ export function Episodes({ episodes = [] }) {
                         <article key={index} className="group flex flex-col md:flex-row gap-6 md:gap-8">
                             {/* Episode thumbnail with play button */}
                             <div className="relative w-full md:w-72 lg:w-80 flex-shrink-0 aspect-video overflow-hidden rounded-lg bg-white/5">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                     src={episode.image}
                                     alt={episode.title}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 
 export function Hero() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -12,6 +13,7 @@ export function Hero() {
     >
       {/* Background image */}
       <div className="absolute inset-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/podcast-studio.jpg"
           alt="Podcast studio"
@@ -23,9 +25,9 @@ export function Hero() {
       {/* Navigation */}
       <nav className="absolute top-0 left-0 right-0 z-50 px-6 lg:px-12 py-6">
         <div className="flex items-center justify-between">
-          <a href="/" className="text-white font-black text-xl tracking-tight uppercase italic hover:text-[#FFD700] transition-colors">
+          <Link href="/" className="text-white font-black text-xl tracking-tight uppercase italic hover:text-[#FFD700] transition-colors">
             FUTURECAST.FM
-          </a>
+          </Link>
 
           {/* Hamburger Menu Button */}
           <button

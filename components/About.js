@@ -14,7 +14,7 @@ export function About() {
                         Not pundits. Not commentators. The ones in the arena.
                     </p>
                     <p>
-                        Scientists who ignore what's "realistic." Founders betting everything on ideas that sound crazy until they work. Artists rewriting the rules.
+                        Scientists who ignore what&apos;s &ldquo;realistic.&rdquo; Founders betting everything on ideas that sound crazy until they work. Artists rewriting the rules.
                     </p>
                     <p>
                         We ask the questions nobody else asks. We skip the rehearsed answers.
