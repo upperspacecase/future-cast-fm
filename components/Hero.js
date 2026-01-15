@@ -1,10 +1,21 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 
 export function Hero() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const videoRef = useRef(null)
+
+  // Force video playback on mobile
+  useEffect(() => {
+    const video = videoRef.current
+    if (video) {
+      video.play().catch(() => {
+        // Autoplay failed, user interaction required
+      })
+    }
+  }, [])
 
   return (
     <section
@@ -14,10 +25,13 @@ export function Hero() {
       {/* Background video */}
       <div className="absolute inset-0">
         <video
+          ref={videoRef}
           autoPlay
           loop
           muted
           playsInline
+          preload="auto"
+          poster="/hero-bg.jpg"
           className="object-cover w-full h-full opacity-70"
         >
           <source src="/hero-video.mp4" type="video/mp4" />
