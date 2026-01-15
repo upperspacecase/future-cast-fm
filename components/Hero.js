@@ -15,7 +15,7 @@ export function Hero() {
       <div className="absolute inset-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/podcast-studio.jpg"
+          src="/hero-bg.jpg"
           alt="Podcast studio"
           className="object-cover w-full h-full opacity-70"
         />
