@@ -101,7 +101,7 @@ export function Episodes({ episodes = [] }) {
         <section id="episodes" className="py-20 md:py-32 px-6 lg:px-12 bg-black">
             <div className="max-w-6xl mx-auto">
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-black uppercase italic text-white mb-16">
-                    {episodes.length > 0 ? "MOST POPULAR EPISODES" : "EPISODES"}
+                    EPISODES
                 </h2>
 
                 <div className="space-y-16">
