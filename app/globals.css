@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+
 @plugin "daisyui" {
   themes: light --default;
 }
@@ -16,33 +17,84 @@
   --animate-popup: popup 0.25s ease-in-out;
 
   @keyframes shimmer {
-    0% { background-position: 0 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+      background-position: 0 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
   }
 
   @keyframes opacity {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
+    0% {
+      opacity: 0;
+    }
+
+    100% {
+      opacity: 1;
+    }
   }
 
   @keyframes appearFromRight {
-    0% { opacity: 0.3; transform: translate(15%, 0px); }
-    100% { opacity: 1; transform: translate(0); }
+    0% {
+      opacity: 0.3;
+      transform: translate(15%, 0px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translate(0);
+    }
   }
 
   @keyframes wiggle {
-    0%, 20%, 80%, 100% { transform: rotate(0deg); }
-    30%, 60% { transform: rotate(-2deg); }
-    40%, 70% { transform: rotate(2deg); }
-    45% { transform: rotate(-4deg); }
-    55% { transform: rotate(4deg); }
+
+    0%,
+    20%,
+    80%,
+    100% {
+      transform: rotate(0deg);
+    }
+
+    30%,
+    60% {
+      transform: rotate(-2deg);
+    }
+
+    40%,
+    70% {
+      transform: rotate(2deg);
+    }
+
+    45% {
+      transform: rotate(-4deg);
+    }
+
+    55% {
+      transform: rotate(4deg);
+    }
   }
 
   @keyframes popup {
-    0% { transform: scale(0.8); opacity: 0.8; }
-    50% { transform: scale(1.1); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+      transform: scale(0.8);
+      opacity: 0.8;
+    }
+
+    50% {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 }
 
@@ -53,6 +105,18 @@ body {
 
 progress::-webkit-progress-value {
   transition: 0.6s width ease-out;
+}
+
+/* Hide video play button on mobile */
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls {
+  display: none !important;
+  -webkit-appearance: none;
+}
+
+video::--moz-media-controls {
+  display: none !important;
 }
 
 .btn-gradient {
@@ -192,6 +256,7 @@ progress::-webkit-progress-value {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
