@@ -98,10 +98,10 @@ export function Hero() {
 
       {/* Main title */}
       <div className="relative z-10 text-center px-6">
-        <h1 className="text-6xl md:text-8xl lg:text-[10rem] font-black uppercase italic leading-[0.85] tracking-tight text-[#FFD700]">
-          FUTURE
+        <h1 className="text-5xl md:text-7xl lg:text-[8rem] font-black uppercase italic leading-[0.85] tracking-tight text-[#FFD700]">
+          INTO THE
           <br />
-          CAST
+          UNKNOWN...
         </h1>
       </div>
 
