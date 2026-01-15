@@ -11,14 +11,17 @@ export function Hero() {
       id="hero"
       className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black"
     >
-      {/* Background image */}
+      {/* Background video */}
       <div className="absolute inset-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/hero-bg.jpg"
-          alt="Podcast studio"
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
           className="object-cover w-full h-full opacity-70"
-        />
+        >
+          <source src="/hero-video.mp4" type="video/mp4" />
+        </video>
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
       </div>
 
