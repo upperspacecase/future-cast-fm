@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 const platforms = [
     {
         name: "Spotify",
@@ -31,6 +33,38 @@ const platforms = [
 ]
 
 export function Subscribe() {
+    const [name, setName] = useState("")
+    const [email, setEmail] = useState("")
+    const [status, setStatus] = useState("idle")
+    const [errorMsg, setErrorMsg] = useState("")
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setStatus("loading")
+        setErrorMsg("")
+
+        try {
+            const res = await fetch("/api/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email }),
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) {
+                setErrorMsg(data.error || "Something went wrong")
+                setStatus("error")
+                return
+            }
+
+            setStatus("success")
+        } catch {
+            setErrorMsg("Something went wrong")
+            setStatus("error")
+        }
+    }
+
     return (
         <section id="subscribe" className="py-20 md:py-32 px-6 lg:px-12 bg-[#FFD700]">
             <div className="max-w-5xl mx-auto text-center">
@@ -38,7 +72,7 @@ export function Subscribe() {
                     SUBSCRIBE NOW ON YOUR FAVOURITE PLATFORM
                 </h2>
 
-                <div className="flex flex-wrap justify-center gap-4">
+                <div className="flex flex-wrap justify-center gap-4 mb-16">
                     {platforms.map((platform) => (
                         <a
                             key={platform.name}
@@ -51,6 +85,47 @@ export function Subscribe() {
                             </span>
                         </a>
                     ))}
+                </div>
+
+                <div className="border-t border-black/20 pt-12">
+                    <h3 className="text-xl md:text-2xl font-black uppercase italic text-black mb-6">
+                        STAY IN THE LOOP
+                    </h3>
+
+                    {status === "success" ? (
+                        <p className="text-black font-black uppercase italic text-lg">YOU&apos;RE IN. WELCOME TO THE FUTURE.</p>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-3">
+                            <input
+                                type="text"
+                                placeholder="Your name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                required
+                                className="w-full bg-black/10 border border-black/20 rounded-lg px-4 py-3 text-black placeholder-black/40 text-sm focus:outline-none focus:border-black transition-colors"
+                            />
+                            <input
+                                type="email"
+                                placeholder="Your email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="w-full bg-black/10 border border-black/20 rounded-lg px-4 py-3 text-black placeholder-black/40 text-sm focus:outline-none focus:border-black transition-colors"
+                            />
+
+                            {status === "error" && (
+                                <p className="text-red-600 text-sm">{errorMsg}</p>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={status === "loading"}
+                                className="w-full bg-black text-[#FFD700] font-black uppercase italic py-3 rounded-lg text-sm hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
+                            >
+                                {status === "loading" ? "SUBSCRIBING..." : "SUBSCRIBE"}
+                            </button>
+                        </form>
+                    )}
                 </div>
             </div>
         </section>
