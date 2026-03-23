@@ -39,7 +39,7 @@ export function About() {
     <section id="about" className="py-20 md:py-32 px-6 lg:px-12 bg-black">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic leading-tight text-white mb-8">
-          FutureCast is a series of long conversations about how we navigate being human in a world that&apos;s accelerating faster than humans naturally move. Together, we&apos;re figuring it out as we go. In work, art, relationships, and the most interesting to me - areas we often don&apos;t have language for yet.
+          FutureCast is a series of long conversations about how we navigate being human in a world that&apos;s accelerating faster than humans naturally move.
         </h2>
 
         {status === "success" ? (
