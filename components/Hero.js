@@ -99,9 +99,9 @@ export function Hero() {
       {/* Main title */}
       <div className="relative z-10 text-center px-6">
         <h1 className="text-5xl md:text-7xl lg:text-[8rem] font-black uppercase italic leading-[0.85] tracking-tight text-[#FFD700]">
-          INTO THE
+          HUMANS,
           <br />
-          UNKNOWN...
+          UNEDITED.
         </h1>
       </div>
 

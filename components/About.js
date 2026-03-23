@@ -38,20 +38,9 @@ export function About() {
   return (
     <section id="about" className="py-20 md:py-32 px-6 lg:px-12 bg-black">
       <div className="max-w-4xl mx-auto text-center">
-        <div className="text-white mb-8 space-y-4">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic leading-tight text-[#FFD700]">
-            Humans, unedited.
-          </h2>
-          <p className="text-lg md:text-xl leading-relaxed">
-            FutureCast is a series of long conversations about how we navigate being human in a world that&apos;s accelerating faster than humans naturally move.
-          </p>
-          <p className="text-lg md:text-xl leading-relaxed">
-            Together, we&apos;re figuring it out as we go.
-          </p>
-          <p className="text-lg md:text-xl leading-relaxed">
-            In work, art, relationships, and the most interesting to me - areas we often don&apos;t have language for yet.
-          </p>
-        </div>
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic leading-tight text-white mb-8">
+          FutureCast is a series of long conversations about how we navigate being human in a world that&apos;s accelerating faster than humans naturally move. Together, we&apos;re figuring it out as we go. In work, art, relationships, and the most interesting to me - areas we often don&apos;t have language for yet.
+        </h2>
 
         {status === "success" ? (
           <p className="text-[#FFD700] font-black uppercase italic text-lg">YOU&apos;RE IN. WELCOME TO THE FUTURE.</p>
