@@ -14,24 +14,28 @@ const DAY_NAMES = [
   "Saturday",
 ];
 
-const TIMEZONES = [
-  { value: "America/New_York", label: "Eastern Time (ET)" },
-  { value: "America/Chicago", label: "Central Time (CT)" },
-  { value: "America/Denver", label: "Mountain Time (MT)" },
-  { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
-  { value: "America/Anchorage", label: "Alaska (AKT)" },
-  { value: "Pacific/Honolulu", label: "Hawaii (HST)" },
-  { value: "Europe/London", label: "London (GMT/BST)" },
-  { value: "Europe/Paris", label: "Paris (CET)" },
-  { value: "Europe/Berlin", label: "Berlin (CET)" },
-  { value: "Asia/Dubai", label: "Dubai (GST)" },
-  { value: "Asia/Kolkata", label: "India (IST)" },
-  { value: "Asia/Tokyo", label: "Tokyo (JST)" },
-  { value: "Australia/Sydney", label: "Sydney (AEST)" },
-  { value: "Pacific/Auckland", label: "Auckland (NZST)" },
-];
+// Get every timezone the browser supports
+function getAllTimezones() {
+  return Intl.supportedValuesOf("timeZone");
+}
+
+function formatTzLabel(tz) {
+  try {
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      timeZoneName: "shortOffset",
+    }).formatToParts(now);
+    const offset = parts.find((p) => p.type === "timeZoneName")?.value || "";
+    const city = tz.split("/").pop().replace(/_/g, " ");
+    return `${city} (${offset})`;
+  } catch {
+    return tz;
+  }
+}
 
 export default function AvailabilityPage() {
+  const [allTimezones, setAllTimezones] = useState([]);
   const [timezone, setTimezone] = useState("");
   const [days, setDays] = useState(
     DAY_NAMES.map((_, i) => ({
@@ -43,9 +47,10 @@ export default function AvailabilityPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Auto-detect timezone on mount
+  // Auto-detect timezone and load full list on mount
   useEffect(() => {
     setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setAllTimezones(getAllTimezones());
   }, []);
 
   const toggleDay = (dayIndex) => {
@@ -184,17 +189,12 @@ export default function AvailabilityPage() {
             }}
             className="bg-black border border-[#FACC15]/30 rounded-xl px-4 py-3 text-white text-sm italic focus:outline-none focus:border-[#FACC15] w-full max-w-xs"
           >
-            {TIMEZONES.map((tz) => (
-              <option key={tz.value} value={tz.value}>
-                {tz.label}
+            {allTimezones.map((tz) => (
+              <option key={tz} value={tz}>
+                {formatTzLabel(tz)}
               </option>
             ))}
           </select>
-          {timezone && !TIMEZONES.find((t) => t.value === timezone) && (
-            <p className="text-white/30 text-xs italic mt-1">
-              Detected: {timezone} ({formatTzShort(timezone)})
-            </p>
-          )}
         </div>
 
         {/* Summary */}
