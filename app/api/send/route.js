@@ -41,7 +41,7 @@ export async function POST(req) {
       );
     }
 
-    const { html, text } = generateOutreachEmail(guest.id);
+    const { html, text } = generateOutreachEmail(guest.id, guest.name);
 
     const result = await sendEmail({
       to: guest.email,

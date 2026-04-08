@@ -138,7 +138,7 @@ export async function GET(req) {
 
     for (const guest of unsent) {
       try {
-        const { html, text } = generateOutreachEmail(guest.id);
+        const { html, text } = generateOutreachEmail(guest.id, guest.name);
 
         const result = await sendEmail({
           to: guest.email,
