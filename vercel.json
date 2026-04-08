@@ -3,6 +3,18 @@
     {
       "path": "/api/cron/discover-and-send",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/warmup",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/warmup",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/warmup",
+      "schedule": "0 18 * * *"
     }
   ]
 }
