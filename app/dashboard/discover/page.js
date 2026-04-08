@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { authFetch } from "@/libs/authFetch";
 
 const GENRES = [
   { id: "", label: "ALL GENRES" },
@@ -32,7 +33,7 @@ export default function DiscoverPage() {
     setResults(null);
 
     try {
-      const res = await fetch("/api/discover", {
+      const res = await authFetch("/api/discover", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

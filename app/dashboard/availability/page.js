@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { authFetch } from "@/libs/authFetch";
 
 const DAY_NAMES = [
   "Sunday",
@@ -89,7 +90,7 @@ export default function AvailabilityPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/availability", {
+      const res = await authFetch("/api/availability", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ days }),

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { authFetch } from "@/libs/authFetch";
 
 const STATUS_LABELS = {
   discovered: "DISCOVERED",
@@ -35,7 +36,7 @@ export default function DashboardPage() {
   const fetchGuests = async () => {
     try {
       const url = filter ? `/api/guests?status=${filter}` : "/api/guests";
-      const res = await fetch(url);
+      const res = await authFetch(url);
       const data = await res.json();
       setGuests(data.guests || []);
       setStats(data.stats || {});
@@ -56,7 +57,7 @@ export default function DashboardPage() {
   const handleSend = async (guestId) => {
     setSendingId(guestId);
     try {
-      const res = await fetch("/api/send", {
+      const res = await authFetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ guestId }),
@@ -73,7 +74,7 @@ export default function DashboardPage() {
 
   const handleStatusChange = async (guestId, status) => {
     try {
-      const res = await fetch("/api/guests", {
+      const res = await authFetch("/api/guests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ guestId, status }),

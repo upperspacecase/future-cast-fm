@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/libs/auth";
+import { verifyAdmin } from "@/libs/firebaseAdmin";
 import connectMongo from "@/libs/mongoose";
 import Guest from "@/models/Guest";
 import { sendEmail } from "@/libs/resend";
@@ -7,8 +7,8 @@ import { generateOutreachEmail } from "@/lib/emailTemplate";
 
 export async function POST(req) {
   try {
-    const session = await auth();
-    if (!session?.user) {
+    const admin = await verifyAdmin(req);
+    if (!admin) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }

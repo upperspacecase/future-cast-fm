@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/libs/auth";
+import { verifyAdmin } from "@/libs/firebaseAdmin";
 import connectMongo from "@/libs/mongoose";
 import Guest from "@/models/Guest";
 
 // GET: Fetch all guests with optional status filter
 export async function GET(req) {
   try {
-    const session = await auth();
-    if (!session?.user) {
+    const admin = await verifyAdmin(req);
+    if (!admin) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
@@ -63,8 +63,8 @@ export async function GET(req) {
 // PATCH: Update guest status
 export async function PATCH(req) {
   try {
-    const session = await auth();
-    if (!session?.user) {
+    const admin = await verifyAdmin(req);
+    if (!admin) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
