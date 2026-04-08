@@ -13,6 +13,11 @@ export async function generateMetadata() {
 export default async function SchedulePage({ params }) {
   const { guestId } = await params;
 
+  // Validate ObjectId format before querying
+  if (!guestId.match(/^[0-9a-fA-F]{24}$/)) {
+    notFound();
+  }
+
   await connectMongo();
 
   const guest = await Guest.findById(guestId);
