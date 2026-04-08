@@ -3,8 +3,11 @@ import { verifyAdmin } from "@/libs/firebaseAdmin";
 import connectMongo from "@/libs/mongoose";
 import Availability from "@/models/Availability";
 import Booking from "@/models/Booking";
+import DateOverride from "@/models/DateOverride";
 
-// GET: Fetch availability (public for schedule page, returns open slots)
+const MIN_NOTICE_MS = 48 * 60 * 60 * 1000; // 48 hours
+
+// GET: Public — returns only bookable slots for guests
 export async function GET(req) {
   try {
     await connectMongo();
@@ -20,36 +23,52 @@ export async function GET(req) {
 
     const timezone = availabilities[0]?.timezone || "America/Los_Angeles";
 
-    // Build available slots for the next N weeks
     const now = new Date();
+    const minBookTime = new Date(now.getTime() + MIN_NOTICE_MS);
     const endDate = new Date(now);
     endDate.setDate(endDate.getDate() + weeks * 7);
 
-    // Get all existing bookings in this range
-    const existingBookings = await Booking.find({
+    // Load bookings
+    const bookings = await Booking.find({
       date: { $gte: now, $lte: endDate },
     });
-    const bookedTimes = new Set(
-      existingBookings.map((b) => b.date.toISOString())
+    const bookedTimes = new Set(bookings.map((b) => b.date.toISOString()));
+
+    // Get dates that already have a booking (one per day)
+    const bookedDates = new Set();
+    for (const b of bookings) {
+      const dateStr = b.date.toLocaleDateString("en-CA", { timeZone: timezone });
+      bookedDates.add(dateStr);
+    }
+
+    // Load date overrides
+    const overrides = await DateOverride.find().lean();
+    const overrideSet = new Set(
+      overrides.map((o) => `${o.date}|${o.slotTime}`)
     );
 
     const slots = [];
     const current = new Date(now);
-    // Start from tomorrow
     current.setDate(current.getDate() + 1);
     current.setHours(0, 0, 0, 0);
 
     while (current <= endDate) {
       const dayOfWeek = current.getDay();
-      const dayAvailability = availabilities.find(
-        (a) => a.dayOfWeek === dayOfWeek
-      );
+      const dayAvail = availabilities.find((a) => a.dayOfWeek === dayOfWeek);
+      const calendarDate = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
 
-      if (dayAvailability && dayAvailability.slots.length > 0) {
-        for (const timeSlot of dayAvailability.slots) {
+      if (dayAvail && dayAvail.slots.length > 0) {
+        // Skip entire day if already booked
+        if (bookedDates.has(calendarDate)) {
+          current.setDate(current.getDate() + 1);
+          continue;
+        }
+
+        for (const timeSlot of dayAvail.slots) {
+          // Skip if date override exists
+          if (overrideSet.has(`${calendarDate}|${timeSlot}`)) continue;
+
           const [hours, minutes] = timeSlot.split(":").map(Number);
-
-          // Convert host local time to UTC
           const slotUTC = hostLocalToUTC(
             current.getFullYear(),
             current.getMonth(),
@@ -59,9 +78,9 @@ export async function GET(req) {
             timezone
           );
 
-          // Skip if already booked or in the past
+          // Skip if in the past, within minimum notice, or already booked
           if (
-            slotUTC > now &&
+            slotUTC > minBookTime &&
             !bookedTimes.has(slotUTC.toISOString())
           ) {
             slots.push({
@@ -86,7 +105,7 @@ export async function GET(req) {
   }
 }
 
-// POST: Update availability (admin only)
+// POST: Update recurring availability (admin only)
 export async function POST(req) {
   try {
     const admin = await verifyAdmin(req);
@@ -108,7 +127,6 @@ export async function POST(req) {
 
     await connectMongo();
 
-    // Upsert each day
     const results = [];
     for (const day of days) {
       const result = await Availability.findOneAndUpdate(
@@ -134,15 +152,10 @@ export async function POST(req) {
   }
 }
 
-/**
- * Convert a date/time in a host timezone to UTC
- */
 function hostLocalToUTC(year, month, day, hours, minutes, timezone) {
-  // Create a date string and parse it relative to the timezone
-  const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
-
-  // Get the UTC offset for this timezone at this date
-  const tempDate = new Date(dateStr + "Z");
+  const tempDate = new Date(
+    `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00Z`
+  );
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
     year: "numeric",
@@ -152,24 +165,14 @@ function hostLocalToUTC(year, month, day, hours, minutes, timezone) {
     minute: "numeric",
     hour12: false,
   });
-
-  // Use the offset approach: format the UTC date in the target timezone,
-  // find the difference, and apply it
   const parts = formatter.formatToParts(tempDate);
   const tzYear = parseInt(parts.find((p) => p.type === "year").value);
   const tzMonth = parseInt(parts.find((p) => p.type === "month").value) - 1;
   const tzDay = parseInt(parts.find((p) => p.type === "day").value);
   const tzHour = parseInt(parts.find((p) => p.type === "hour").value);
   const tzMinute = parseInt(parts.find((p) => p.type === "minute").value);
-
-  const tzDate = new Date(
-    Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, 0)
-  );
+  const tzDate = new Date(Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, 0));
   const offsetMs = tzDate.getTime() - tempDate.getTime();
-
-  // The actual UTC time is the local time minus the offset
-  const localAsUTC = new Date(
-    Date.UTC(year, month, day, hours, minutes, 0)
-  );
+  const localAsUTC = new Date(Date.UTC(year, month, day, hours, minutes, 0));
   return new Date(localAsUTC.getTime() - offsetMs);
 }

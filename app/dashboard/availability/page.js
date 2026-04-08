@@ -4,17 +4,10 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { authFetch } from "@/libs/authFetch";
 
-const DAY_NAMES = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const FULL_DAY_NAMES = [
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
 ];
-
-const SHORT_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function getAllTimezones() {
   try {
@@ -63,11 +56,22 @@ function generateGoogleCalendarUrl({ guestName, date, durationMinutes = 60 }) {
   return `https://calendar.google.com/calendar/render?${params}`;
 }
 
+// Get the Monday of the week containing a date
+function getWeekStart(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day; // Monday = start
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export default function AvailabilityPage() {
   const [allTimezones, setAllTimezones] = useState([]);
   const [timezone, setTimezone] = useState("");
+  const [tzFromDb, setTzFromDb] = useState("");
   const [days, setDays] = useState(
-    DAY_NAMES.map((_, i) => ({
+    FULL_DAY_NAMES.map((_, i) => ({
       dayOfWeek: i,
       active: false,
       slots: [],
@@ -78,13 +82,10 @@ export default function AvailabilityPage() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Load timezone list + detect
   useEffect(() => {
     setAllTimezones(getAllTimezones());
-    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
   }, []);
 
-  // Load existing availability + calendar from DB
   const loadCalendar = async () => {
     try {
       const res = await authFetch("/api/admin/calendar");
@@ -94,8 +95,12 @@ export default function AvailabilityPage() {
       setCalendarSlots(data.slots || []);
 
       if (data.availabilities?.length > 0) {
-        const tz = data.timezone || timezone;
-        if (tz) setTimezone(tz);
+        // Use saved timezone from DB, not browser detection
+        const savedTz = data.timezone;
+        if (savedTz) {
+          setTzFromDb(savedTz);
+          if (!timezone) setTimezone(savedTz);
+        }
 
         setDays((prev) =>
           prev.map((d) => {
@@ -112,18 +117,23 @@ export default function AvailabilityPage() {
             return d;
           })
         );
+      } else if (!timezone) {
+        // No saved availability, use browser timezone as initial
+        setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
       }
     } catch {
-      // First time, no availability set
+      if (!timezone) {
+        setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (timezone) loadCalendar();
+    loadCalendar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timezone]);
+  }, []);
 
   const toggleDay = (dayIndex) => {
     setDays((prev) =>
@@ -186,25 +196,27 @@ export default function AvailabilityPage() {
     setSaved(false);
   };
 
-  const removeCalendarSlot = async (dayOfWeek, hostTime) => {
+  const removeCalendarSlot = async (calendarDate, hostTime) => {
     try {
       await authFetch("/api/admin/calendar", {
         method: "DELETE",
-        body: JSON.stringify({ dayOfWeek, slotTime: hostTime }),
+        body: JSON.stringify({ calendarDate, slotTime: hostTime }),
       });
-      // Refresh
       loadCalendar();
-      // Also update local days state
-      setDays((prev) =>
-        prev.map((d) => {
-          if (d.dayOfWeek === dayOfWeek) {
-            return { ...d, slots: d.slots.filter((s) => s !== hostTime) };
-          }
-          return d;
-        })
-      );
     } catch (err) {
       console.error("Failed to remove slot:", err);
+    }
+  };
+
+  const restoreCalendarSlot = async (calendarDate, hostTime) => {
+    try {
+      await authFetch("/api/admin/calendar", {
+        method: "PATCH",
+        body: JSON.stringify({ calendarDate, slotTime: hostTime }),
+      });
+      loadCalendar();
+    } catch (err) {
+      console.error("Failed to restore slot:", err);
     }
   };
 
@@ -221,6 +233,7 @@ export default function AvailabilityPage() {
       });
       if (res.ok) {
         setSaved(true);
+        setTzFromDb(timezone);
         loadCalendar();
       }
     } catch (err) {
@@ -230,24 +243,43 @@ export default function AvailabilityPage() {
     }
   };
 
-  // Group calendar slots by date for the calendar view
-  const calendarByDate = useMemo(() => {
-    const groups = {};
-    for (const slot of calendarSlots) {
-      const d = new Date(slot.date);
-      const dateKey = d.toLocaleDateString("en-US", {
-        timeZone: timezone || "UTC",
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      });
-      if (!groups[dateKey]) groups[dateKey] = [];
-      groups[dateKey].push(slot);
-    }
-    return groups;
-  }, [calendarSlots, timezone]);
+  // Build week grid data: 4 weeks, Mon-Sun columns
+  const weekGrid = useMemo(() => {
+    const weeks = [];
+    const today = new Date();
+    let weekStart = getWeekStart(today);
 
-  const calendarDates = Object.keys(calendarByDate);
+    for (let w = 0; w < 4; w++) {
+      const week = [];
+      for (let d = 0; d < 7; d++) {
+        const date = new Date(weekStart);
+        date.setDate(date.getDate() + d);
+        const calendarDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        // day index: Mon=1..Sun=0, but our array is Mon(0)..Sun(6)
+        const dayOfWeek = date.getDay();
+
+        const daySlots = calendarSlots.filter(
+          (s) => s.calendarDate === calendarDate
+        );
+
+        week.push({
+          date,
+          calendarDate,
+          dayOfWeek,
+          dayNum: date.getDate(),
+          month: date.toLocaleDateString("en-US", { month: "short" }),
+          isToday:
+            date.toDateString() === today.toDateString(),
+          isPast: date < today && date.toDateString() !== today.toDateString(),
+          slots: daySlots,
+        });
+      }
+      weeks.push(week);
+      weekStart = new Date(weekStart);
+      weekStart.setDate(weekStart.getDate() + 7);
+    }
+    return weeks;
+  }, [calendarSlots]);
 
   if (loading) {
     return (
@@ -260,9 +292,9 @@ export default function AvailabilityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black p-6 lg:p-12">
+    <div className="min-h-screen bg-black p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <p className="text-xs text-[#FACC15] tracking-[0.2em] font-bold italic mb-2">
             FUTURECAST.FM
@@ -279,167 +311,98 @@ export default function AvailabilityPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left: Set recurring availability */}
-        <div>
-          <h2 className="text-sm font-bold italic text-[#FACC15] uppercase tracking-wider mb-4">
-            RECURRING SCHEDULE
+      {/* Calendar Grid */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold italic text-[#FACC15] uppercase tracking-wider">
+            CALENDAR — {timezone ? formatTzShort(timezone) : ""}
           </h2>
-
-          {/* Timezone */}
-          <div className="mb-4">
-            <label className="text-white/40 text-xs italic uppercase tracking-wider block mb-1">
-              Your timezone
-            </label>
-            <select
-              value={timezone}
-              onChange={(e) => {
-                setTimezone(e.target.value);
-                setSaved(false);
-              }}
-              className="bg-black border border-[#FACC15]/30 rounded-xl px-4 py-3 text-white text-sm italic focus:outline-none focus:border-[#FACC15] w-full"
-            >
-              {allTimezones.map((tz) => (
-                <option key={tz} value={tz}>
-                  {formatTzLabel(tz)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Days */}
-          <div className="space-y-2">
-            {days.map((day) => (
-              <div
-                key={day.dayOfWeek}
-                className={`border rounded-xl p-3 transition-all ${
-                  day.active
-                    ? "border-[#FACC15]/30 bg-[#FACC15]/5"
-                    : "border-white/10 opacity-50"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => toggleDay(day.dayOfWeek)}
-                    className="flex items-center gap-3"
-                  >
-                    <div
-                      className={`w-3.5 h-3.5 rounded border-2 transition-all ${
-                        day.active
-                          ? "bg-[#FACC15] border-[#FACC15]"
-                          : "border-white/30"
-                      }`}
-                    />
-                    <span className="text-white font-bold italic uppercase text-sm">
-                      {DAY_NAMES[day.dayOfWeek]}
-                    </span>
-                  </button>
-                  <div className="flex items-center gap-2">
-                    {day.active && day.slots.length > 0 && (
-                      <button
-                        onClick={() => copyToAllActive(day.dayOfWeek)}
-                        className="text-white/30 text-[10px] font-bold italic uppercase hover:text-[#FACC15] transition-colors"
-                      >
-                        COPY TO ALL
-                      </button>
-                    )}
-                    {day.active && day.slots.length < 3 && (
-                      <button
-                        onClick={() => addSlot(day.dayOfWeek)}
-                        className="text-[#FACC15] text-xs font-bold italic uppercase hover:underline"
-                      >
-                        + ADD
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {day.active && day.slots.length > 0 && (
-                  <div className="flex gap-2 flex-wrap ml-6 mt-2">
-                    {day.slots.map((slot, i) => (
-                      <div key={i} className="flex items-center gap-1">
-                        <input
-                          type="time"
-                          value={slot}
-                          onChange={(e) =>
-                            updateSlot(day.dayOfWeek, i, e.target.value)
-                          }
-                          className="bg-black border border-[#FACC15]/20 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-[#FACC15]"
-                        />
-                        <button
-                          onClick={() => removeSlot(day.dayOfWeek, i)}
-                          className="text-red-400/50 hover:text-red-400 text-xs px-1"
-                        >
-                          x
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Save */}
-          <div className="mt-4">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="w-full bg-[#FACC15] hover:bg-yellow-300 text-black font-black italic text-base py-3 rounded-xl tracking-wide transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              {saving ? "SAVING..." : saved ? "SAVED" : "SAVE"}
-            </button>
+          <div className="flex items-center gap-4 text-[10px] italic uppercase tracking-wider">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm bg-[#FACC15]/30 border border-[#FACC15]/40" />
+              <span className="text-white/40">Open</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm bg-green-500/30 border border-green-500/40" />
+              <span className="text-white/40">Booked</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm bg-white/5 border border-white/10" />
+              <span className="text-white/40">Removed</span>
+            </span>
           </div>
         </div>
 
-        {/* Right: Calendar view */}
-        <div>
-          <h2 className="text-sm font-bold italic text-[#FACC15] uppercase tracking-wider mb-4">
-            UPCOMING SLOTS — NEXT 4 WEEKS
-          </h2>
-
-          {calendarDates.length === 0 ? (
-            <div className="border border-[#FACC15]/10 rounded-xl p-8 text-center">
-              <p className="text-white/30 italic text-sm uppercase">
-                No slots set. Configure your recurring schedule and save.
-              </p>
+        {/* Day headers: Mon-Sun */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+            <div
+              key={d}
+              className="text-center text-[10px] text-white/30 italic uppercase tracking-wider py-1"
+            >
+              {d}
             </div>
-          ) : (
-            <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
-              {calendarDates.map((dateKey) => (
-                <div key={dateKey}>
-                  <h3 className="text-xs font-bold italic text-white/40 uppercase tracking-wider mb-1.5">
-                    {dateKey}
-                  </h3>
-                  <div className="space-y-1.5">
-                    {calendarByDate[dateKey].map((slot) => (
-                      <div
-                        key={slot.date}
-                        className={`flex items-center justify-between rounded-lg px-3 py-2.5 border transition-all ${
-                          slot.booked
-                            ? "border-green-500/40 bg-green-500/10"
-                            : "border-[#FACC15]/15 bg-[#FACC15]/5"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`font-bold italic text-sm ${
-                              slot.booked ? "text-green-400" : "text-white/70"
-                            }`}
-                          >
-                            {slot.hostTime}
+          ))}
+        </div>
+
+        {/* Week rows */}
+        {weekGrid.map((week, wi) => (
+          <div key={wi} className="grid grid-cols-7 gap-1 mb-1">
+            {week.map((day) => (
+              <div
+                key={day.calendarDate}
+                className={`border rounded-lg p-2 min-h-[80px] transition-all ${
+                  day.isPast
+                    ? "border-white/5 opacity-30"
+                    : day.isToday
+                    ? "border-[#FACC15]/40 bg-[#FACC15]/5"
+                    : "border-white/10"
+                }`}
+              >
+                <p
+                  className={`text-[10px] mb-1 ${
+                    day.isToday
+                      ? "text-[#FACC15] font-bold"
+                      : "text-white/30"
+                  }`}
+                >
+                  {day.dayNum} {day.month}
+                </p>
+                <div className="space-y-1">
+                  {day.slots.map((slot) => (
+                    <div
+                      key={slot.date + slot.hostTime}
+                      className={`rounded px-1.5 py-1 text-[10px] flex items-center justify-between gap-1 ${
+                        slot.booked
+                          ? "bg-green-500/20 border border-green-500/30"
+                          : slot.removed
+                          ? "bg-white/5 border border-white/10 line-through opacity-50"
+                          : slot.dayBlocked
+                          ? "bg-white/5 border border-white/10 opacity-30"
+                          : "bg-[#FACC15]/10 border border-[#FACC15]/20"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <span
+                          className={`font-bold italic ${
+                            slot.booked
+                              ? "text-green-400"
+                              : slot.removed
+                              ? "text-white/30"
+                              : "text-white/60"
+                          }`}
+                        >
+                          {slot.hostTime}
+                        </span>
+                        {slot.booked && slot.booking && (
+                          <span className="text-green-400/70 ml-1 truncate">
+                            {slot.booking.guestName.split(" ")[0]}
                           </span>
-                          <span className="text-white/30 text-xs italic">
-                            {formatTzShort(timezone)}
-                          </span>
-                          {slot.booked && (
-                            <span className="text-green-400 text-xs font-bold italic uppercase">
-                              {slot.booking.guestName}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {slot.booked ? (
+                        )}
+                      </div>
+                      {!day.isPast && (
+                        <div className="flex-shrink-0">
+                          {slot.booked && slot.booking ? (
                             <a
                               href={generateGoogleCalendarUrl({
                                 guestName: slot.booking.guestName,
@@ -447,28 +410,158 @@ export default function AvailabilityPage() {
                               })}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-green-400 text-[10px] font-bold italic uppercase hover:underline"
+                              className="text-green-400 hover:text-green-300"
+                              title="Add to Google Calendar"
                             >
-                              ADD TO CALENDAR
+                              +
                             </a>
-                          ) : (
+                          ) : slot.removed ? (
                             <button
                               onClick={() =>
-                                removeCalendarSlot(slot.dayOfWeek, slot.hostTime)
+                                restoreCalendarSlot(
+                                  day.calendarDate,
+                                  slot.hostTime
+                                )
                               }
-                              className="text-red-400/40 text-[10px] font-bold italic uppercase hover:text-red-400 transition-colors"
+                              className="text-[#FACC15]/50 hover:text-[#FACC15]"
+                              title="Restore slot"
                             >
-                              REMOVE
+                              +
                             </button>
-                          )}
+                          ) : !slot.dayBlocked ? (
+                            <button
+                              onClick={() =>
+                                removeCalendarSlot(
+                                  day.calendarDate,
+                                  slot.hostTime
+                                )
+                              }
+                              className="text-red-400/40 hover:text-red-400"
+                              title="Remove this slot"
+                            >
+                              x
+                            </button>
+                          ) : null}
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Recurring Schedule Editor */}
+      <div className="max-w-2xl">
+        <h2 className="text-sm font-bold italic text-[#FACC15] uppercase tracking-wider mb-3">
+          RECURRING SCHEDULE
+        </h2>
+
+        {/* Timezone */}
+        <div className="mb-4">
+          <label className="text-white/40 text-xs italic uppercase tracking-wider block mb-1">
+            Your timezone
+          </label>
+          <select
+            value={timezone}
+            onChange={(e) => {
+              setTimezone(e.target.value);
+              setSaved(false);
+            }}
+            className="bg-black border border-[#FACC15]/30 rounded-xl px-4 py-3 text-white text-sm italic focus:outline-none focus:border-[#FACC15] w-full max-w-sm"
+          >
+            {allTimezones.map((tz) => (
+              <option key={tz} value={tz}>
+                {formatTzLabel(tz)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Days */}
+        <div className="space-y-2">
+          {days.map((day) => (
+            <div
+              key={day.dayOfWeek}
+              className={`border rounded-xl p-3 transition-all ${
+                day.active
+                  ? "border-[#FACC15]/30 bg-[#FACC15]/5"
+                  : "border-white/10 opacity-50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => toggleDay(day.dayOfWeek)}
+                  className="flex items-center gap-3"
+                >
+                  <div
+                    className={`w-3.5 h-3.5 rounded border-2 transition-all ${
+                      day.active
+                        ? "bg-[#FACC15] border-[#FACC15]"
+                        : "border-white/30"
+                    }`}
+                  />
+                  <span className="text-white font-bold italic uppercase text-sm">
+                    {FULL_DAY_NAMES[day.dayOfWeek]}
+                  </span>
+                </button>
+                <div className="flex items-center gap-2">
+                  {day.active && day.slots.length > 0 && (
+                    <button
+                      onClick={() => copyToAllActive(day.dayOfWeek)}
+                      className="text-white/30 text-[10px] font-bold italic uppercase hover:text-[#FACC15] transition-colors"
+                    >
+                      COPY TO ALL
+                    </button>
+                  )}
+                  {day.active && day.slots.length < 3 && (
+                    <button
+                      onClick={() => addSlot(day.dayOfWeek)}
+                      className="text-[#FACC15] text-xs font-bold italic uppercase hover:underline"
+                    >
+                      + ADD
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {day.active && day.slots.length > 0 && (
+                <div className="flex gap-2 flex-wrap ml-6 mt-2">
+                  {day.slots.map((slot, i) => (
+                    <div key={i} className="flex items-center gap-1">
+                      <input
+                        type="time"
+                        value={slot}
+                        onChange={(e) =>
+                          updateSlot(day.dayOfWeek, i, e.target.value)
+                        }
+                        className="bg-black border border-[#FACC15]/20 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-[#FACC15]"
+                      />
+                      <button
+                        onClick={() => removeSlot(day.dayOfWeek, i)}
+                        className="text-red-400/50 hover:text-red-400 text-xs px-1"
+                      >
+                        x
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          ))}
+        </div>
+
+        {/* Save */}
+        <div className="mt-4">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full bg-[#FACC15] hover:bg-yellow-300 text-black font-black italic text-base py-3 rounded-xl tracking-wide transition-all active:scale-[0.98] disabled:opacity-50"
+          >
+            {saving ? "SAVING..." : saved ? "SAVED" : "SAVE"}
+          </button>
         </div>
       </div>
     </div>
