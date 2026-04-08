@@ -2,17 +2,70 @@
 
 import { useState, useEffect, useMemo } from "react";
 
+// Common timezones grouped by region
+const TIMEZONE_OPTIONS = [
+  { group: "Americas", zones: [
+    { value: "America/New_York", label: "Eastern Time (ET)" },
+    { value: "America/Chicago", label: "Central Time (CT)" },
+    { value: "America/Denver", label: "Mountain Time (MT)" },
+    { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
+    { value: "America/Anchorage", label: "Alaska (AKT)" },
+    { value: "Pacific/Honolulu", label: "Hawaii (HST)" },
+    { value: "America/Toronto", label: "Toronto (ET)" },
+    { value: "America/Vancouver", label: "Vancouver (PT)" },
+    { value: "America/Mexico_City", label: "Mexico City (CST)" },
+    { value: "America/Sao_Paulo", label: "Sao Paulo (BRT)" },
+    { value: "America/Argentina/Buenos_Aires", label: "Buenos Aires (ART)" },
+    { value: "America/Bogota", label: "Bogota (COT)" },
+  ]},
+  { group: "Europe", zones: [
+    { value: "Europe/London", label: "London (GMT/BST)" },
+    { value: "Europe/Paris", label: "Paris (CET)" },
+    { value: "Europe/Berlin", label: "Berlin (CET)" },
+    { value: "Europe/Amsterdam", label: "Amsterdam (CET)" },
+    { value: "Europe/Madrid", label: "Madrid (CET)" },
+    { value: "Europe/Rome", label: "Rome (CET)" },
+    { value: "Europe/Stockholm", label: "Stockholm (CET)" },
+    { value: "Europe/Helsinki", label: "Helsinki (EET)" },
+    { value: "Europe/Moscow", label: "Moscow (MSK)" },
+    { value: "Europe/Istanbul", label: "Istanbul (TRT)" },
+  ]},
+  { group: "Asia & Pacific", zones: [
+    { value: "Asia/Dubai", label: "Dubai (GST)" },
+    { value: "Asia/Kolkata", label: "India (IST)" },
+    { value: "Asia/Bangkok", label: "Bangkok (ICT)" },
+    { value: "Asia/Singapore", label: "Singapore (SGT)" },
+    { value: "Asia/Hong_Kong", label: "Hong Kong (HKT)" },
+    { value: "Asia/Shanghai", label: "Shanghai (CST)" },
+    { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+    { value: "Asia/Seoul", label: "Seoul (KST)" },
+    { value: "Australia/Sydney", label: "Sydney (AEST)" },
+    { value: "Australia/Melbourne", label: "Melbourne (AEST)" },
+    { value: "Australia/Perth", label: "Perth (AWST)" },
+    { value: "Pacific/Auckland", label: "Auckland (NZST)" },
+  ]},
+  { group: "Africa & Middle East", zones: [
+    { value: "Africa/Cairo", label: "Cairo (EET)" },
+    { value: "Africa/Lagos", label: "Lagos (WAT)" },
+    { value: "Africa/Johannesburg", label: "Johannesburg (SAST)" },
+    { value: "Africa/Nairobi", label: "Nairobi (EAT)" },
+    { value: "Asia/Jerusalem", label: "Jerusalem (IST)" },
+    { value: "Asia/Riyadh", label: "Riyadh (AST)" },
+  ]},
+];
+
 export default function ScheduleClient({ guestId }) {
   const [slots, setSlots] = useState([]);
   const [hostTimezone, setHostTimezone] = useState("America/Los_Angeles");
   const [guestTimezone, setGuestTimezone] = useState("");
+  const [showTzPicker, setShowTzPicker] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isBooking, setIsBooking] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Detect guest timezone
+  // Auto-detect guest timezone from browser
   useEffect(() => {
     setGuestTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
   }, []);
@@ -139,10 +192,40 @@ export default function ScheduleClient({ guestId }) {
 
   return (
     <div className="space-y-6">
-      {/* Timezone display */}
-      <div className="flex justify-between text-xs text-white/50 italic uppercase tracking-wider px-1">
-        <span>Your time ({formatTzShort(guestTimezone)})</span>
-        <span>Host time ({formatTzShort(hostTimezone)})</span>
+      {/* Timezone display + picker */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center text-xs text-white/50 italic uppercase tracking-wider px-1">
+          <button
+            onClick={() => setShowTzPicker(!showTzPicker)}
+            className="flex items-center gap-1 hover:text-[#FACC15] transition-colors"
+          >
+            <span>Your time ({formatTzShort(guestTimezone)})</span>
+            <span className="text-[10px]">CHANGE</span>
+          </button>
+          <span>Host time ({formatTzShort(hostTimezone)})</span>
+        </div>
+
+        {showTzPicker && (
+          <select
+            value={guestTimezone}
+            onChange={(e) => {
+              setGuestTimezone(e.target.value);
+              setShowTzPicker(false);
+              setSelectedSlot(null);
+            }}
+            className="w-full bg-black border border-[#FACC15]/30 rounded-xl px-4 py-3 text-white text-sm italic focus:outline-none focus:border-[#FACC15]"
+          >
+            {TIMEZONE_OPTIONS.map((group) => (
+              <optgroup key={group.group} label={group.group}>
+                {group.zones.map((tz) => (
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Slot groups by date */}
