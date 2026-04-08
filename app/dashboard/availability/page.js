@@ -14,82 +14,39 @@ const DAY_NAMES = [
   "Saturday",
 ];
 
-const DEFAULT_TIMEZONE = "America/Los_Angeles";
-
-const PRESET_SCHEDULES = [
-  { label: "WEEKDAYS ONLY", days: [1, 2, 3, 4, 5] },
-  { label: "MON / WED / FRI", days: [1, 3, 5] },
-  { label: "TUE / THU", days: [2, 4] },
-  { label: "EVERY DAY", days: [0, 1, 2, 3, 4, 5, 6] },
-];
-
-const PRESET_TIMES = [
-  { label: "MORNING", slots: ["09:00"] },
-  { label: "AFTERNOON", slots: ["14:00"] },
-  { label: "EVENING", slots: ["18:00"] },
-  { label: "MORNING + AFTERNOON", slots: ["09:00", "14:00"] },
-  { label: "MORNING + AFTERNOON + EVENING", slots: ["09:00", "14:00", "18:00"] },
+const TIMEZONES = [
+  { value: "America/New_York", label: "Eastern Time (ET)" },
+  { value: "America/Chicago", label: "Central Time (CT)" },
+  { value: "America/Denver", label: "Mountain Time (MT)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
+  { value: "America/Anchorage", label: "Alaska (AKT)" },
+  { value: "Pacific/Honolulu", label: "Hawaii (HST)" },
+  { value: "Europe/London", label: "London (GMT/BST)" },
+  { value: "Europe/Paris", label: "Paris (CET)" },
+  { value: "Europe/Berlin", label: "Berlin (CET)" },
+  { value: "Asia/Dubai", label: "Dubai (GST)" },
+  { value: "Asia/Kolkata", label: "India (IST)" },
+  { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+  { value: "Australia/Sydney", label: "Sydney (AEST)" },
+  { value: "Pacific/Auckland", label: "Auckland (NZST)" },
 ];
 
 export default function AvailabilityPage() {
+  const [timezone, setTimezone] = useState("");
   const [days, setDays] = useState(
     DAY_NAMES.map((_, i) => ({
       dayOfWeek: i,
       active: i >= 1 && i <= 5,
       slots: [],
-      timezone: DEFAULT_TIMEZONE,
     }))
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [loaded, setLoaded] = useState(false);
 
-  // Load existing availability on mount
+  // Auto-detect timezone on mount
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/availability?weeks=0");
-        const data = await res.json();
-        if (data.timezone) {
-          setLoaded(true);
-        }
-      } catch {
-        // Use defaults
-      }
-    }
-    load();
+    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
   }, []);
-
-  const applyDayPreset = (activeDays) => {
-    setDays((prev) =>
-      prev.map((d) => ({
-        ...d,
-        active: activeDays.includes(d.dayOfWeek),
-      }))
-    );
-    setSaved(false);
-  };
-
-  const applyTimePreset = (presetSlots) => {
-    setDays((prev) =>
-      prev.map((d) => ({
-        ...d,
-        slots: d.active ? [...presetSlots] : d.slots,
-      }))
-    );
-    setSaved(false);
-  };
-
-  const applyToAll = (sourceDayIndex) => {
-    const source = days.find((d) => d.dayOfWeek === sourceDayIndex);
-    if (!source) return;
-    setDays((prev) =>
-      prev.map((d) =>
-        d.active ? { ...d, slots: [...source.slots] } : d
-      )
-    );
-    setSaved(false);
-  };
 
   const toggleDay = (dayIndex) => {
     setDays((prev) =>
@@ -139,9 +96,15 @@ export default function AvailabilityPage() {
     setSaved(false);
   };
 
-  const clearAll = () => {
+  const copyToAllActive = (sourceDayIndex) => {
+    const source = days.find((d) => d.dayOfWeek === sourceDayIndex);
+    if (!source || source.slots.length === 0) return;
     setDays((prev) =>
-      prev.map((d) => ({ ...d, slots: [], active: false }))
+      prev.map((d) =>
+        d.active && d.dayOfWeek !== sourceDayIndex
+          ? { ...d, slots: [...source.slots] }
+          : d
+      )
     );
     setSaved(false);
   };
@@ -149,9 +112,13 @@ export default function AvailabilityPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const payload = days.map((d) => ({
+        ...d,
+        timezone,
+      }));
       const res = await authFetch("/api/availability", {
         method: "POST",
-        body: JSON.stringify({ days }),
+        body: JSON.stringify({ days: payload }),
       });
       if (res.ok) {
         setSaved(true);
@@ -163,7 +130,19 @@ export default function AvailabilityPage() {
     }
   };
 
-  // Count active days with slots for the summary
+  const formatTzShort = (tz) => {
+    if (!tz) return "";
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        timeZoneName: "short",
+      }).formatToParts(new Date());
+      return parts.find((p) => p.type === "timeZoneName")?.value || tz;
+    } catch {
+      return tz;
+    }
+  };
+
   const activeDaysWithSlots = days.filter(
     (d) => d.active && d.slots.length > 0
   ).length;
@@ -192,61 +171,37 @@ export default function AvailabilityPage() {
       </div>
 
       <div className="max-w-2xl">
-        {/* Quick Setup */}
-        <div className="border border-[#FACC15]/20 rounded-xl p-5 mb-6 space-y-4">
-          <h2 className="text-sm font-bold italic text-[#FACC15] uppercase tracking-wider">
-            QUICK SETUP
-          </h2>
-
-          {/* Day presets */}
-          <div>
-            <p className="text-white/40 text-xs italic uppercase tracking-wider mb-2">
-              Which days?
+        {/* Timezone selector */}
+        <div className="mb-6">
+          <label className="text-white/40 text-xs italic uppercase tracking-wider block mb-2">
+            Your timezone
+          </label>
+          <select
+            value={timezone}
+            onChange={(e) => {
+              setTimezone(e.target.value);
+              setSaved(false);
+            }}
+            className="bg-black border border-[#FACC15]/30 rounded-xl px-4 py-3 text-white text-sm italic focus:outline-none focus:border-[#FACC15] w-full max-w-xs"
+          >
+            {TIMEZONES.map((tz) => (
+              <option key={tz.value} value={tz.value}>
+                {tz.label}
+              </option>
+            ))}
+          </select>
+          {timezone && !TIMEZONES.find((t) => t.value === timezone) && (
+            <p className="text-white/30 text-xs italic mt-1">
+              Detected: {timezone} ({formatTzShort(timezone)})
             </p>
-            <div className="flex gap-2 flex-wrap">
-              {PRESET_SCHEDULES.map((preset) => (
-                <button
-                  key={preset.label}
-                  onClick={() => applyDayPreset(preset.days)}
-                  className="px-3 py-1.5 border border-[#FACC15]/20 text-white/60 rounded-lg text-xs font-bold italic uppercase hover:border-[#FACC15] hover:text-[#FACC15] transition-all"
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Time presets */}
-          <div>
-            <p className="text-white/40 text-xs italic uppercase tracking-wider mb-2">
-              Apply times to all active days
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              {PRESET_TIMES.map((preset) => (
-                <button
-                  key={preset.label}
-                  onClick={() => applyTimePreset(preset.slots)}
-                  className="px-3 py-1.5 border border-[#FACC15]/20 text-white/60 rounded-lg text-xs font-bold italic uppercase hover:border-[#FACC15] hover:text-[#FACC15] transition-all"
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Summary */}
-        <div className="flex items-center justify-between mb-4 px-1">
-          <p className="text-white/50 text-sm italic uppercase">
-            {activeDaysWithSlots} days, {totalSlots} slots per week -- Pacific Time (PT)
-          </p>
-          <button
-            onClick={clearAll}
-            className="text-red-400/50 text-xs font-bold italic uppercase hover:text-red-400 transition-colors"
-          >
-            CLEAR ALL
-          </button>
-        </div>
+        <p className="text-white/50 text-sm italic mb-6 uppercase">
+          {activeDaysWithSlots} days, {totalSlots} slots per week
+          {timezone ? ` -- ${formatTzShort(timezone)}` : ""}
+        </p>
 
         {/* Days */}
         <div className="space-y-3">
@@ -278,10 +233,10 @@ export default function AvailabilityPage() {
                 <div className="flex items-center gap-3">
                   {day.active && day.slots.length > 0 && (
                     <button
-                      onClick={() => applyToAll(day.dayOfWeek)}
+                      onClick={() => copyToAllActive(day.dayOfWeek)}
                       className="text-white/30 text-[10px] font-bold italic uppercase hover:text-[#FACC15] transition-colors tracking-wider"
                     >
-                      APPLY TO ALL
+                      COPY TO ALL
                     </button>
                   )}
                   {day.active && day.slots.length < 3 && (
@@ -320,7 +275,7 @@ export default function AvailabilityPage() {
 
               {day.active && day.slots.length === 0 && (
                 <p className="text-white/30 text-xs italic ml-7">
-                  No slots -- click + ADD SLOT or use quick setup above
+                  No slots -- click + ADD SLOT
                 </p>
               )}
             </div>
