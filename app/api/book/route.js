@@ -114,7 +114,7 @@ export async function POST(req) {
     await resend.emails.send({
       from: "Tay at FutureCast.fm <tay@futurecast.fm>",
       to: guest.email,
-      subject: "You're locked in - FutureCast.fm",
+      subject: "Can't wait to speak - FutureCast.fm",
       html: guestEmail.html,
       text: guestEmail.text,
       attachments: [

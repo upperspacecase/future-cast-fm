@@ -156,7 +156,7 @@ export default function ScheduleClient({ guestId }) {
     return (
       <div className="bg-black border border-[#FACC15]/40 rounded-2xl p-8 text-center shadow-[0_0_60px_rgba(250,204,21,0.15)]">
         <h2 className="text-3xl font-black italic text-[#FACC15] mb-4">
-          LOCKED IN
+          CAN&apos;T WAIT TO SPEAK
         </h2>
         <p className="text-white/70 text-sm italic uppercase font-bold mb-2">
           Check your email for a calendar invite.
