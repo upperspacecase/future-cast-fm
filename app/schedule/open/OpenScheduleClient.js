@@ -225,68 +225,88 @@ export default function OpenScheduleClient() {
         )}
       </div>
 
-      {/* Slots */}
-      {dateKeys.map((dateKey) => (
-        <div key={dateKey}>
-          <h3 className="text-sm font-bold italic text-[#FACC15] uppercase tracking-wider mb-3">
-            {dateKey}
-          </h3>
-          <div className="space-y-2">
-            {groupedSlots[dateKey].map((slot) => {
-              const isSelected = selectedSlot === slot.date;
-              return (
+      <div className="flex gap-6">
+        {/* Slots — left side */}
+        <div className="flex-1 space-y-6">
+          {dateKeys.map((dateKey) => (
+            <div key={dateKey}>
+              <h3 className="text-sm font-bold italic text-[#FACC15] uppercase tracking-wider mb-3">
+                {dateKey}
+              </h3>
+              <div className="space-y-2">
+                {groupedSlots[dateKey].map((slot) => {
+                  const isSelected = selectedSlot === slot.date;
+                  return (
+                    <button
+                      key={slot.date}
+                      onClick={() => setSelectedSlot(slot.date)}
+                      className={`w-full flex justify-between items-center px-4 py-3 rounded-xl border transition-all ${
+                        isSelected
+                          ? "border-[#FACC15] bg-[#FACC15]/10 shadow-[0_0_20px_rgba(250,204,21,0.2)]"
+                          : "border-[#FACC15]/20 bg-black hover:border-[#FACC15]/50"
+                      }`}
+                    >
+                      <span className={`font-bold italic ${isSelected ? "text-[#FACC15]" : "text-white/80"}`}>
+                        {formatTime(slot.date, guestTimezone)}
+                      </span>
+                      <span className="text-white/40 text-sm italic">
+                        {formatTime(slot.date, hostTimezone)} {formatTzShort(hostTimezone)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Form — right side, sticky */}
+        <div className="w-64 flex-shrink-0">
+          <div className="sticky top-8 space-y-3">
+            {selectedSlot ? (
+              <>
+                <p className="text-[#FACC15] text-xs font-bold italic uppercase mb-2">
+                  {new Date(selectedSlot).toLocaleDateString("en-US", {
+                    timeZone: guestTimezone || "UTC",
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  })}{" "}
+                  at {formatTime(selectedSlot, guestTimezone)} {formatTzShort(guestTimezone)}
+                </p>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  className="w-full bg-black border border-[#FACC15]/30 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#FACC15] italic text-sm"
+                />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Your email"
+                  className="w-full bg-black border border-[#FACC15]/30 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#FACC15] italic text-sm"
+                />
+                {error && (
+                  <p className="text-red-400 text-xs italic">{error}</p>
+                )}
                 <button
-                  key={slot.date}
-                  onClick={() => setSelectedSlot(slot.date)}
-                  className={`w-full flex justify-between items-center px-4 py-3 rounded-xl border transition-all ${
-                    isSelected
-                      ? "border-[#FACC15] bg-[#FACC15]/10 shadow-[0_0_20px_rgba(250,204,21,0.2)]"
-                      : "border-[#FACC15]/20 bg-black hover:border-[#FACC15]/50"
-                  }`}
+                  onClick={handleBook}
+                  disabled={isBooking || !name.trim() || !email.trim()}
+                  className="w-full bg-[#FACC15] hover:bg-yellow-300 text-black font-black italic text-base py-3 rounded-xl tracking-wide transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(250,204,21,0.4)] disabled:opacity-50"
                 >
-                  <span className={`font-bold italic ${isSelected ? "text-[#FACC15]" : "text-white/80"}`}>
-                    {formatTime(slot.date, guestTimezone)}
-                  </span>
-                  <span className="text-white/40 text-sm italic">
-                    {formatTime(slot.date, hostTimezone)} {formatTzShort(hostTimezone)}
-                  </span>
+                  {isBooking ? "..." : "SUBMIT"}
                 </button>
-              );
-            })}
+              </>
+            ) : (
+              <p className="text-white/20 text-xs italic uppercase">
+                Select a time slot
+              </p>
+            )}
           </div>
         </div>
-      ))}
-
-      {error && (
-        <p className="text-red-400 text-sm italic text-center">{error}</p>
-      )}
-
-      {/* Name + Email + Book */}
-      {selectedSlot && (
-        <div className="space-y-3">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            className="w-full bg-black border border-[#FACC15]/30 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#FACC15] italic"
-          />
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Your email"
-            className="w-full bg-black border border-[#FACC15]/30 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#FACC15] italic"
-          />
-          <button
-            onClick={handleBook}
-            disabled={isBooking || !name.trim() || !email.trim()}
-            className="w-full bg-[#FACC15] hover:bg-yellow-300 text-black font-black italic text-xl py-4 rounded-xl tracking-wide transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(250,204,21,0.4)] disabled:opacity-50"
-          >
-            {isBooking ? "BOOKING..." : "LOCK IT IN"}
-          </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
