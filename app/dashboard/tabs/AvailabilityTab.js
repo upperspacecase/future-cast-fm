@@ -75,6 +75,7 @@ export default function AvailabilityTab() {
     }))
   );
   const [calendarSlots, setCalendarSlots] = useState([]);
+  const [weeksToShow, setWeeksToShow] = useState(8);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -85,7 +86,7 @@ export default function AvailabilityTab() {
 
   const loadCalendar = async () => {
     try {
-      const res = await authFetch("/api/admin/calendar");
+      const res = await authFetch(`/api/admin/calendar?weeks=${weeksToShow}`);
       if (!res.ok) return;
       const data = await res.json();
 
@@ -244,7 +245,7 @@ export default function AvailabilityTab() {
     const today = new Date();
     let weekStart = getWeekStart(today);
 
-    for (let w = 0; w < 4; w++) {
+    for (let w = 0; w < weeksToShow; w++) {
       const week = [];
       for (let d = 0; d < 7; d++) {
         const date = new Date(weekStart);
@@ -274,7 +275,7 @@ export default function AvailabilityTab() {
       weekStart.setDate(weekStart.getDate() + 7);
     }
     return weeks;
-  }, [calendarSlots]);
+  }, [calendarSlots, weeksToShow]);
 
   if (loading) {
     return (
@@ -293,21 +294,44 @@ export default function AvailabilityTab() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold italic text-[#FACC15] uppercase tracking-wider">
-            CALENDAR — {timezone ? formatTzShort(timezone) : ""}
+            CALENDAR — {weeksToShow} WEEKS — {timezone ? formatTzShort(timezone) : ""}
           </h2>
-          <div className="flex items-center gap-4 text-[10px] italic uppercase tracking-wider">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-[#FACC15]/30 border border-[#FACC15]/40" />
-              <span className="text-white/40">Open</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-green-500/30 border border-green-500/40" />
-              <span className="text-white/40">Booked</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-white/5 border border-white/10" />
-              <span className="text-white/40">Removed</span>
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 text-[10px] italic uppercase tracking-wider">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm bg-[#FACC15]/30 border border-[#FACC15]/40" />
+                <span className="text-white/40">Open</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm bg-green-500/30 border border-green-500/40" />
+                <span className="text-white/40">Booked</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm bg-white/5 border border-white/10" />
+                <span className="text-white/40">Removed</span>
+              </span>
+            </div>
+            <div className="flex gap-1">
+              <button
+                onClick={() => {
+                  setWeeksToShow(Math.max(4, weeksToShow - 4));
+                  loadCalendar();
+                }}
+                disabled={weeksToShow <= 4}
+                className="px-2 py-1 border border-white/10 text-white/30 rounded text-[10px] hover:text-white/60 disabled:opacity-20"
+              >
+                LESS
+              </button>
+              <button
+                onClick={() => {
+                  setWeeksToShow(weeksToShow + 4);
+                  loadCalendar();
+                }}
+                className="px-2 py-1 border border-white/10 text-white/30 rounded text-[10px] hover:text-white/60"
+              >
+                MORE
+              </button>
+            </div>
           </div>
         </div>
 

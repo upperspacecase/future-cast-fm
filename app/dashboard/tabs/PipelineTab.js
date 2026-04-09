@@ -54,6 +54,18 @@ export default function PipelineTab() {
     }
   };
 
+  const handleDelete = async (guestId) => {
+    try {
+      const res = await authFetch("/api/guests", {
+        method: "DELETE",
+        body: JSON.stringify({ guestId }),
+      });
+      if (res.ok) fetchGuests();
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  };
+
   const handleStatusChange = async (guestId, status) => {
     try {
       const res = await authFetch("/api/guests", {
@@ -211,6 +223,15 @@ export default function PipelineTab() {
                               DONE
                             </button>
                           )}
+                          <button
+                            onClick={() =>
+                              handleDelete(guest.id || guest._id)
+                            }
+                            className="px-2 py-0.5 text-red-400/30 rounded text-[9px] italic hover:text-red-400 transition-colors"
+                            title="Remove"
+                          >
+                            DEL
+                          </button>
                         </div>
                       </div>
                     </div>

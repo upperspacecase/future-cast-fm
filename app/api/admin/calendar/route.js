@@ -24,9 +24,12 @@ export async function GET(req) {
     const timezone =
       availabilities.find((a) => a.active)?.timezone || "America/Los_Angeles";
 
+    const { searchParams } = new URL(req.url);
+    const weeks = parseInt(searchParams.get("weeks") || "8", 10);
+
     const now = new Date();
     const endDate = new Date(now);
-    endDate.setDate(endDate.getDate() + 28);
+    endDate.setDate(endDate.getDate() + weeks * 7);
 
     // Load bookings
     const bookings = await Booking.find({
