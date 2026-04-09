@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { authFetch } from "@/libs/authFetch";
+import GuestModal from "./GuestModal";
 
 const COLUMNS = [
   { id: "discovered", label: "DISCOVERED", color: "border-white/20" },
@@ -18,6 +19,7 @@ export default function PipelineTab() {
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
+  const [selectedGuest, setSelectedGuest] = useState(null);
 
   const fetchGuests = async () => {
     try {
@@ -169,7 +171,8 @@ export default function PipelineTab() {
                   colGuests.map((guest) => (
                     <div
                       key={guest.id || guest._id}
-                      className="bg-black border border-white/10 rounded-lg p-3 hover:border-[#FACC15]/30 transition-all"
+                      className="bg-black border border-white/10 rounded-lg p-3 hover:border-[#FACC15]/30 transition-all cursor-pointer"
+                      onClick={() => setSelectedGuest(guest)}
                     >
                       <p className="text-white font-bold text-xs truncate">
                         {guest.name}
@@ -181,7 +184,7 @@ export default function PipelineTab() {
                         <span className="text-[#FACC15] text-[10px] font-black italic">
                           {guest.aiScore}
                         </span>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                           {col.id === "discovered" && (
                             <>
                               <button
@@ -242,6 +245,27 @@ export default function PipelineTab() {
           );
         })}
       </div>
+
+      {/* Guest Detail Modal */}
+      {selectedGuest && (
+        <GuestModal
+          guest={selectedGuest}
+          onClose={() => setSelectedGuest(null)}
+          onSend={(id) => {
+            handleSend(id);
+            setSelectedGuest(null);
+          }}
+          onDelete={(id) => {
+            handleDelete(id);
+            setSelectedGuest(null);
+          }}
+          onStatusChange={(id, status) => {
+            handleStatusChange(id, status);
+            setSelectedGuest(null);
+          }}
+          sendingId={sendingId}
+        />
+      )}
     </div>
   );
 }

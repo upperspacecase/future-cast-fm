@@ -48,9 +48,23 @@ export default function PodcastTab() {
     }
   };
 
+  const [seeding, setSeeding] = useState(false);
+
   useEffect(() => {
     fetchEpisodes();
   }, []);
+
+  const handleSeedFromRSS = async () => {
+    setSeeding(true);
+    try {
+      const res = await authFetch("/api/episodes/seed", { method: "POST" });
+      if (res.ok) fetchEpisodes();
+    } catch (err) {
+      console.error("Seed failed:", err);
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -162,12 +176,21 @@ export default function PodcastTab() {
             </button>
           </form>
         ) : (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="text-[#FACC15] text-xs font-bold italic uppercase hover:underline"
-          >
-            + ADD EPISODE
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowAdd(true)}
+              className="text-[#FACC15] text-xs font-bold italic uppercase hover:underline"
+            >
+              + ADD EPISODE
+            </button>
+            <button
+              onClick={handleSeedFromRSS}
+              disabled={seeding}
+              className="text-white/30 text-[10px] font-bold italic uppercase hover:text-[#FACC15] transition-colors disabled:opacity-50"
+            >
+              {seeding ? "SYNCING..." : "SYNC FROM RSS"}
+            </button>
+          </div>
         )}
       </div>
 
