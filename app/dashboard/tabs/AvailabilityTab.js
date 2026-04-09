@@ -43,6 +43,7 @@ export default function AvailabilityTab() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setAllTimezones(getAllTimezones());
@@ -176,8 +177,27 @@ export default function AvailabilityTab() {
     );
   }
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText("https://futurecast.fm/schedule/open");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div>
+      {/* Booking link */}
+      <div className="flex items-center justify-between mb-6">
+        <p className="text-white/40 text-xs italic">
+          https://futurecast.fm/schedule/open
+        </p>
+        <button
+          onClick={handleCopyLink}
+          className="px-3 py-1.5 border border-[#FACC15]/20 text-white/40 rounded-lg text-[10px] font-bold italic uppercase hover:text-[#FACC15] hover:border-[#FACC15]/40 transition-all"
+        >
+          {copied ? "COPIED" : "COPY BOOKING LINK"}
+        </button>
+      </div>
+
       {/* Calendar */}
       <div className="mb-8">
         <RecordingCalendar />
