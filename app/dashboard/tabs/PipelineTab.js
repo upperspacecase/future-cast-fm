@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/libs/authFetch";
 import GuestModal from "./GuestModal";
+import RecordingCalendar from "./RecordingCalendar";
 
 const COLUMNS = [
   { id: "discovered", label: "DISCOVERED", color: "border-white/20" },
@@ -244,6 +245,11 @@ export default function PipelineTab() {
             </div>
           );
         })}
+      </div>
+
+      {/* Recording Calendar */}
+      <div className="mt-8">
+        <RecordingCalendar compact />
       </div>
 
       {/* Guest Detail Modal */}
