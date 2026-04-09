@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyAdmin } from "@/libs/firebaseAdmin";
 import connectMongo from "@/libs/mongoose";
 import Guest from "@/models/Guest";
 import Booking from "@/models/Booking";
@@ -7,7 +8,9 @@ import { generateICS } from "@/lib/ics";
 import { generateConfirmationEmail } from "@/lib/confirmationEmail";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function POST(req) {
   try {
@@ -112,7 +115,7 @@ export async function POST(req) {
       isHost: false,
     });
 
-    await resend.emails.send({
+    await getResend().emails.send({
       from: "Tay at FutureCast.fm <tay@futurecast.fm>",
       to: guest.email,
       subject: "Can't wait to speak - FutureCast.fm",
@@ -135,7 +138,7 @@ export async function POST(req) {
       isHost: true,
     });
 
-    await resend.emails.send({
+    await getResend().emails.send({
       from: "FutureCast.fm <noreply@futurecast.fm>",
       to: "tay@futurecast.fm",
       subject: `New booking: ${guest.name}`,
@@ -157,6 +160,60 @@ export async function POST(req) {
     console.error("Booking error:", error);
     return NextResponse.json(
       { error: "Booking failed: " + error.message },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE: Cancel a booking (admin only)
+export async function DELETE(req) {
+  try {
+    const admin = await verifyAdmin(req);
+    if (!admin) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const { bookingId } = await req.json();
+
+    if (!bookingId) {
+      return NextResponse.json(
+        { error: "Booking ID is required" },
+        { status: 400 }
+      );
+    }
+
+    await connectMongo();
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return NextResponse.json(
+        { error: "Booking not found" },
+        { status: 404 }
+      );
+    }
+
+    // Revert guest status back to clicked
+    if (booking.guestId) {
+      const guest = await Guest.findById(booking.guestId);
+      if (guest && (guest.status === "scheduled" || guest.status === "accepted")) {
+        guest.status = "clicked";
+        guest.scheduledAt = undefined;
+        guest.acceptedAt = undefined;
+        guest.bookingId = undefined;
+        await guest.save();
+      }
+    }
+
+    await Booking.findByIdAndDelete(bookingId);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Cancel booking error:", error);
+    return NextResponse.json(
+      { error: "Failed to cancel booking: " + error.message },
       { status: 500 }
     );
   }

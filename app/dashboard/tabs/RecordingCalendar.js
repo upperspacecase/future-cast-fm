@@ -94,6 +94,18 @@ export default function RecordingCalendar({ compact = false, onRemoveSlot, onRes
     loadSlots();
   };
 
+  const handleCancelBooking = async (bookingId) => {
+    try {
+      await authFetch("/api/book", {
+        method: "DELETE",
+        body: JSON.stringify({ bookingId }),
+      });
+      loadSlots();
+    } catch (err) {
+      console.error("Cancel failed:", err);
+    }
+  };
+
   // Build month calendar
   const now = new Date();
   const viewMonth = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
@@ -236,18 +248,27 @@ export default function RecordingCalendar({ compact = false, onRemoveSlot, onRes
                   {!day.isPast && day.isCurrentMonth && (
                     <div className="flex-shrink-0 ml-1">
                       {slot.booked && slot.booking ? (
-                        <a
-                          href={generateGoogleCalendarUrl({
-                            guestName: slot.booking.guestName,
-                            date: slot.date,
-                          })}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-green-400 hover:text-green-300"
-                          title="Add to Google Calendar"
-                        >
-                          +
-                        </a>
+                        <div className="flex items-center gap-1">
+                          <a
+                            href={generateGoogleCalendarUrl({
+                              guestName: slot.booking.guestName,
+                              date: slot.date,
+                            })}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-400 hover:text-green-300"
+                            title="Add to Google Calendar"
+                          >
+                            +
+                          </a>
+                          <button
+                            onClick={() => handleCancelBooking(slot.booking.bookingId)}
+                            className="text-red-400/30 hover:text-red-400"
+                            title="Cancel booking"
+                          >
+                            x
+                          </button>
+                        </div>
                       ) : slot.removed ? (
                         <button
                           onClick={() => handleRestore(day.dateStr, slot.hostTime)}
