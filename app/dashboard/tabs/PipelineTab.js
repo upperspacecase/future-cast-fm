@@ -66,6 +66,20 @@ export default function PipelineTab() {
     }
   };
 
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await authFetch("/api/admin/backfill", { method: "POST" });
+      if (res.ok) fetchGuests();
+    } catch (err) {
+      console.error("Sync failed:", err);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const guestsByStatus = (status) =>
     guests.filter((g) => g.status === status);
 
@@ -79,7 +93,16 @@ export default function PipelineTab() {
 
   return (
     <div>
-      {/* Stats Bar */}
+      {/* Sync + Stats */}
+      <div className="flex justify-end mb-3">
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="px-3 py-1.5 border border-[#FACC15]/20 text-white/40 rounded-lg text-[10px] font-bold italic uppercase hover:text-[#FACC15] hover:border-[#FACC15]/40 transition-all disabled:opacity-50"
+        >
+          {syncing ? "SYNCING..." : "SYNC WITH RESEND"}
+        </button>
+      </div>
       <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-6">
         {[
           { label: "TOTAL", value: stats.total || 0 },
