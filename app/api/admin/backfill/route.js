@@ -50,7 +50,7 @@ export async function POST(req) {
         } else if (event === "clicked") {
           if (!guest.emailClickedAt) guest.emailClickedAt = new Date();
           if (!guest.emailOpenedAt) guest.emailOpenedAt = new Date();
-          if (["emailed", "opened"].includes(guest.status)) {
+          if (["emailed", "opened", "accepted"].includes(guest.status)) {
             guest.status = "clicked";
             updated = true;
           }

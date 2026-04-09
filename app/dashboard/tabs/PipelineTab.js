@@ -10,7 +10,6 @@ const COLUMNS = [
   { id: "emailed", label: "EMAILED", color: "border-blue-500/30" },
   { id: "opened", label: "OPENED", color: "border-purple-500/30" },
   { id: "clicked", label: "CLICKED", color: "border-[#FACC15]/30" },
-  { id: "accepted", label: "ACCEPTED", color: "border-green-500/30" },
   { id: "scheduled", label: "SCHEDULED", color: "border-green-600/30" },
   { id: "recorded", label: "RECORDED", color: "border-emerald-500/30" },
 ];

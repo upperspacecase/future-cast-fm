@@ -25,14 +25,10 @@ export default async function SchedulePage({ params }) {
     notFound();
   }
 
-  // Mark as accepted if they came from email click
-  if (
-    guest.status === "clicked" ||
-    guest.status === "opened" ||
-    guest.status === "emailed"
-  ) {
-    guest.status = "accepted";
-    guest.acceptedAt = new Date();
+  // Mark as clicked if they visited from the email link
+  if (guest.status === "opened" || guest.status === "emailed") {
+    guest.status = "clicked";
+    guest.emailClickedAt = guest.emailClickedAt || new Date();
     await guest.save();
   }
 

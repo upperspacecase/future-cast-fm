@@ -67,6 +67,7 @@ export async function POST(req) {
 
     // Update guest status
     guest.status = "scheduled";
+    guest.acceptedAt = guest.acceptedAt || new Date();
     guest.scheduledAt = new Date();
     guest.bookingId = booking._id;
     await guest.save();
