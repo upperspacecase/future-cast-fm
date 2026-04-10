@@ -21,8 +21,11 @@ const SEARCH_QUERIES = [
 ];
 
 const SCORE_THRESHOLD = 65;
-const MAX_SENDS_PER_RUN = 7;
-const MAX_DISCOVER_PER_QUERY = 20;
+const MAX_SENDS_PER_RUN = 5;
+const MAX_DISCOVER_PER_QUERY = 10;
+
+// Vercel Pro allows up to 300s for cron functions
+export const maxDuration = 300;
 
 export async function GET(req) {
   // Verify cron secret to prevent unauthorized triggers
