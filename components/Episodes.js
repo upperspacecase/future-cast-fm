@@ -54,7 +54,35 @@ function formatDate(date) {
     });
 }
 
-function EpisodeCard({ episode }) {
+function episodeNumberFromEpisode(episode) {
+    if (episode?.episodeNumber !== null && episode?.episodeNumber !== undefined && episode?.episodeNumber !== "") {
+        return String(episode.episodeNumber).padStart(4, "0");
+    }
+    const titleMatch = episode?.title?.match(/FUTURECAST\s+(\d{1,4})/i);
+    if (titleMatch) return titleMatch[1].padStart(4, "0");
+    return null;
+}
+
+function ClipPlayer({ clip }) {
+    return (
+        <div className="group/clip flex flex-col">
+            <div className="relative aspect-[9/16] w-full overflow-hidden rounded-lg bg-white/5 border border-white/10">
+                <video
+                    src={clip.url}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="h-full w-full object-cover"
+                />
+            </div>
+            <p className="mt-2 text-xs text-white/60 leading-tight line-clamp-2">
+                {clip.topic}
+            </p>
+        </div>
+    );
+}
+
+function EpisodeCard({ episode, clips = [] }) {
     const [expanded, setExpanded] = useState(false);
     const shouldTruncate = episode.description?.length > 200;
 
@@ -154,12 +182,20 @@ function EpisodeCard({ episode }) {
                         </a>
                     </div>
                 </div>
+
+                {clips.length > 0 && (
+                    <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {clips.map((clip) => (
+                            <ClipPlayer key={clip.id} clip={clip} />
+                        ))}
+                    </div>
+                )}
             </div>
         </article>
     );
 }
 
-export function Episodes({ episodes = [] }) {
+export function Episodes({ episodes = [], clipsByEpisode = {} }) {
     const displayEpisodes = episodes.length > 0 ? episodes : placeholderEpisodes;
 
     return (
@@ -170,9 +206,13 @@ export function Episodes({ episodes = [] }) {
                 </h2>
 
                 <div className="space-y-16">
-                    {displayEpisodes.map((episode, index) => (
-                        <EpisodeCard key={index} episode={episode} />
-                    ))}
+                    {displayEpisodes.map((episode, index) => {
+                        const key = episodeNumberFromEpisode(episode);
+                        const clips = (key && clipsByEpisode[key]) || [];
+                        return (
+                            <EpisodeCard key={index} episode={episode} clips={clips} />
+                        );
+                    })}
                 </div>
             </div>
         </section>
