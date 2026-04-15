@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
+import useEmblaCarousel from "embla-carousel-react"
 
 // Placeholder data when no episodes exist
 const placeholderEpisodes = [
@@ -65,7 +66,7 @@ function episodeNumberFromEpisode(episode) {
 
 function ClipPlayer({ clip }) {
     return (
-        <div className="group/clip flex flex-col">
+        <div className="flex flex-col">
             <div className="relative aspect-[9/16] w-full overflow-hidden rounded-lg bg-white/5 border border-white/10">
                 <video
                     src={clip.url}
@@ -75,9 +76,58 @@ function ClipPlayer({ clip }) {
                     className="h-full w-full object-cover"
                 />
             </div>
-            <p className="mt-2 text-xs text-white/60 leading-tight line-clamp-2">
+            <p className="mt-2 text-[11px] text-white/60 leading-tight line-clamp-2">
                 {clip.topic}
             </p>
+        </div>
+    );
+}
+
+function ClipCarousel({ clips }) {
+    const [emblaRef, emblaApi] = useEmblaCarousel({
+        align: "start",
+        dragFree: true,
+        containScroll: "trimSnaps",
+    });
+
+    const scrollPrev = () => emblaApi?.scrollPrev();
+    const scrollNext = () => emblaApi?.scrollNext();
+
+    return (
+        <div className="mt-8 relative">
+            <div className="overflow-hidden" ref={emblaRef}>
+                <div className="flex gap-3">
+                    {clips.map((clip) => (
+                        <div
+                            key={clip.id}
+                            className="flex-shrink-0 basis-[7rem] sm:basis-32"
+                        >
+                            <ClipPlayer clip={clip} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {clips.length > 3 && (
+                <div className="mt-3 flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={scrollPrev}
+                        className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                        aria-label="Previous clip"
+                    >
+                        <ChevronLeft className="w-4 h-4 text-white" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={scrollNext}
+                        className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                        aria-label="Next clip"
+                    >
+                        <ChevronRight className="w-4 h-4 text-white" />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
@@ -87,7 +137,7 @@ function EpisodeCard({ episode, clips = [] }) {
     const shouldTruncate = episode.description?.length > 200;
 
     return (
-        <article className="group flex flex-col md:flex-row gap-6 md:gap-8">
+        <article className="group flex flex-col md:flex-row md:items-start gap-6 md:gap-8">
             {/* Episode thumbnail - no play button */}
             <div className="relative w-full md:w-72 lg:w-80 flex-shrink-0 aspect-video overflow-hidden rounded-lg bg-white/5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -183,13 +233,7 @@ function EpisodeCard({ episode, clips = [] }) {
                     </div>
                 </div>
 
-                {clips.length > 0 && (
-                    <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        {clips.map((clip) => (
-                            <ClipPlayer key={clip.id} clip={clip} />
-                        ))}
-                    </div>
-                )}
+                {clips.length > 0 && <ClipCarousel clips={clips} />}
             </div>
         </article>
     );
