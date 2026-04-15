@@ -88,6 +88,13 @@ function ClipCarousel({ clips }) {
         align: "start",
         dragFree: true,
         containScroll: "trimSnaps",
+        watchDrag: (_, event) => {
+            const target = event.target;
+            if (target instanceof Element && target.closest("video")) {
+                return false;
+            }
+            return true;
+        },
     });
 
     const scrollPrev = () => emblaApi?.scrollPrev();
