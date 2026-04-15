@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
+import { useRef, useState } from "react"
+import { ArrowRight, ChevronLeft, ChevronRight, Play, Pause } from "lucide-react"
 import useEmblaCarousel from "embla-carousel-react"
 
 // Placeholder data when no episodes exist
@@ -65,17 +65,53 @@ function episodeNumberFromEpisode(episode) {
 }
 
 function ClipPlayer({ clip }) {
+    const videoRef = useRef(null);
+    const [playing, setPlaying] = useState(false);
+
+    const togglePlay = () => {
+        const v = videoRef.current;
+        if (!v) return;
+        if (v.paused) {
+            v.play();
+        } else {
+            v.pause();
+        }
+    };
+
     return (
         <div className="flex flex-col">
-            <div className="relative aspect-[9/16] w-full overflow-hidden rounded-lg bg-white/5 border border-white/10">
+            <button
+                type="button"
+                onClick={togglePlay}
+                className="group/clip relative aspect-[9/16] w-full overflow-hidden rounded-lg bg-white/5 border border-white/10"
+                aria-label={playing ? "Pause clip" : "Play clip"}
+            >
                 <video
+                    ref={videoRef}
                     src={clip.url}
-                    controls
                     playsInline
                     preload="metadata"
+                    onPlay={() => setPlaying(true)}
+                    onPause={() => setPlaying(false)}
+                    onEnded={() => setPlaying(false)}
                     className="h-full w-full object-cover"
                 />
-            </div>
+                <div
+                    className={`absolute inset-0 flex items-center justify-center transition-opacity ${
+                        playing
+                            ? "opacity-0 group-hover/clip:opacity-100 bg-black/30"
+                            : "opacity-100 bg-black/40"
+                    }`}
+                >
+                    <div className="w-9 h-9 rounded-full bg-white/95 flex items-center justify-center shadow-lg">
+                        {playing ? (
+                            <Pause className="w-4 h-4 text-black" fill="currentColor" />
+                        ) : (
+                            <Play className="w-4 h-4 text-black ml-0.5" fill="currentColor" />
+                        )}
+                    </div>
+                </div>
+            </button>
             <p className="mt-2 text-[11px] text-white/60 leading-tight line-clamp-2">
                 {clip.topic}
             </p>
@@ -90,7 +126,10 @@ function ClipCarousel({ clips }) {
         containScroll: "trimSnaps",
         watchDrag: (_, event) => {
             const target = event.target;
-            if (target instanceof Element && target.closest("video")) {
+            if (
+                target instanceof Element &&
+                target.closest('button, a, video, input, [role="button"]')
+            ) {
                 return false;
             }
             return true;
@@ -144,7 +183,7 @@ function EpisodeCard({ episode, clips = [] }) {
     const shouldTruncate = episode.description?.length > 200;
 
     return (
-        <article className="group flex flex-col md:flex-row md:items-start gap-6 md:gap-8">
+        <article className="group flex flex-col md:flex-row md:items-start gap-6 md:gap-8 border-2 border-[#FFD700] rounded-xl p-6 md:p-8">
             {/* Episode thumbnail - no play button */}
             <div className="relative w-full md:w-72 lg:w-80 flex-shrink-0 aspect-video overflow-hidden rounded-lg bg-white/5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
