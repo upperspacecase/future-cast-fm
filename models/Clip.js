@@ -39,6 +39,15 @@ const clipSchema = mongoose.Schema(
     scheduledAt: {
       type: Date,
     },
+    instagramBufferPostId: {
+      type: String,
+    },
+    instagramScheduledAt: {
+      type: Date,
+    },
+    instagramError: {
+      type: String,
+    },
     postedAt: {
       type: Date,
     },
