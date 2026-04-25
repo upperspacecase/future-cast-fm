@@ -134,22 +134,26 @@ export async function GET(req) {
 
     let instagramPost = null;
     let instagramError = null;
-    try {
-      instagramPost = await createBufferPost(token, {
-        input: {
-          channelId: BUFFER_INSTAGRAM_CHANNEL_ID,
-          schedulingType: "automatic",
-          mode: "addToQueue",
-          text,
-          metadata: {
-            instagram: {
-              type: "reel",
-              shouldShareToFeed: true,
-            },
-          },
-          assets: videoAssets,
+    const igInput = {
+      channelId: BUFFER_INSTAGRAM_CHANNEL_ID,
+      schedulingType: "automatic",
+      text,
+      metadata: {
+        instagram: {
+          type: "reel",
+          shouldShareToFeed: true,
         },
-      });
+      },
+      assets: videoAssets,
+    };
+    if (linkedinPost.dueAt) {
+      igInput.mode = "customScheduled";
+      igInput.dueAt = linkedinPost.dueAt;
+    } else {
+      igInput.mode = "addToQueue";
+    }
+    try {
+      instagramPost = await createBufferPost(token, { input: igInput });
     } catch (err) {
       instagramError = err.message;
       console.error(
