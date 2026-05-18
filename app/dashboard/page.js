@@ -5,12 +5,14 @@ import PipelineTab from "./tabs/PipelineTab";
 import PodcastTab from "./tabs/PodcastTab";
 import AvailabilityTab from "./tabs/AvailabilityTab";
 import DiscoverTab from "./tabs/DiscoverTab";
+import SubscribersTab from "./tabs/SubscribersTab";
 
 const TABS = [
   { id: "pipeline", label: "PIPELINE" },
   { id: "podcast", label: "PODCAST" },
   { id: "availability", label: "AVAILABILITY" },
   { id: "discover", label: "DISCOVER" },
+  { id: "subscribers", label: "SUBSCRIBERS" },
 ];
 
 export default function DashboardPage() {
@@ -50,6 +52,7 @@ export default function DashboardPage() {
         {activeTab === "podcast" && <PodcastTab />}
         {activeTab === "availability" && <AvailabilityTab />}
         {activeTab === "discover" && <DiscoverTab />}
+        {activeTab === "subscribers" && <SubscribersTab />}
       </div>
     </div>
   );
