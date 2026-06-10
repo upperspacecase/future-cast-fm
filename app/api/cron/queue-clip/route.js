@@ -92,9 +92,9 @@ export async function GET(req) {
 
     const token = process.env.BUFFER_API_TOKEN;
     const text = renderPostText(clip);
-    const videoAssets = {
-      videos: [{ url: clip.publicUrl, metadata: { title: clip.topic } }],
-    };
+    const videoAssets = [
+      { video: { url: clip.publicUrl, metadata: { title: clip.topic } } },
+    ];
 
     let linkedinPost;
     try {
