@@ -80,10 +80,17 @@ export function Hero() {
             <a
               href="#subscribe"
               onClick={() => setMenuOpen(false)}
-              className="block text-2xl font-black uppercase italic text-white hover:text-[#FFD700] transition-colors"
+              className="block text-2xl font-black uppercase italic text-white hover:text-[#FFD700] transition-colors mb-6"
             >
               SUBSCRIBE
             </a>
+            <Link
+              href="/booking"
+              onClick={() => setMenuOpen(false)}
+              className="block text-2xl font-black uppercase italic text-white hover:text-[#FFD700] transition-colors"
+            >
+              BOOKING
+            </Link>
           </div>
         </div>
 

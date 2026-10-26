@@ -112,7 +112,13 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/10 mt-12 pt-8 text-center">
-          <p className="text-white/30 text-xs">
+          <Link
+            href="/booking"
+            className="text-white/40 hover:text-[#FFD700] text-xs tracking-[0.18em] uppercase transition-colors"
+          >
+            Future Cast Booking
+          </Link>
+          <p className="text-white/30 text-xs mt-4">
             &copy; {new Date().getFullYear()} FUTURECAST.FM. All rights reserved.
           </p>
         </div>
