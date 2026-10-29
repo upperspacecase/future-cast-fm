@@ -196,7 +196,7 @@ const faqs = [
   },
   {
     q: "Is this already running for other clients?",
-    a: "No. There are no clients yet. The system is built and tested on two shows I host: Future Cast FM, and Spacious, which is launching soon. Those are test cases, not a client list.",
+    a: "No. There are no clients yet. The system is built and tested on Future Cast FM, the show I host. That is a test case, not a client list.",
   },
   {
     q: "Do you edit, promote, or book me onto other shows?",
@@ -329,14 +329,14 @@ export default function BookingPage() {
         <section className="px-6 lg:px-12 py-16 md:py-24 border-t border-white/10">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-black uppercase italic text-white">
-              Tested on two shows. Not sold yet.
+              Tested on our own show. Not sold yet.
             </h2>
             <p className="mt-4 max-w-2xl text-white/70 leading-relaxed">
               There are no clients, no logos, and no results to borrow. The
-              system runs on two shows I host. This page is that same loop,
-              offered to other hosts for the first time.
+              system runs on Future Cast FM, the show I host. This page is
+              that same loop, offered to other hosts for the first time.
             </p>
-            <div className="mt-10 grid gap-4 md:grid-cols-2">
+            <div className="mt-10 max-w-xl">
               <article className="border border-white/15 rounded-xl p-6 md:p-8">
                 <p className="text-xs text-[#FFD700] tracking-[0.18em] uppercase italic font-bold">
                   Test case
@@ -347,17 +347,6 @@ export default function BookingPage() {
                 <p className="mt-3 text-white/70 leading-relaxed">
                   Long-form conversations about agency, the body, and
                   optimistic futures.
-                </p>
-              </article>
-              <article className="border border-white/15 rounded-xl p-6 md:p-8">
-                <p className="text-xs text-[#FFD700] tracking-[0.18em] uppercase italic font-bold">
-                  Test case
-                </p>
-                <h3 className="mt-3 text-2xl font-black uppercase italic">
-                  Spacious
-                </h3>
-                <p className="mt-3 text-white/70 leading-relaxed">
-                  A slow, honest, audio-only conversation show. Launching soon.
                 </p>
               </article>
             </div>
@@ -523,7 +512,7 @@ export default function BookingPage() {
               <p className="text-white/90 leading-relaxed">
                 Pilot: the first 3 hosts get Booked at $750 a month for 2
                 months. Same work. Same $300 credit. Three spots, because I
-                run this myself and two shows already sit on the system.
+                run this myself and Future Cast FM already sits on the system.
               </p>
             </div>
 
@@ -634,9 +623,8 @@ export default function BookingPage() {
               for. I will reply with a yes, a no, or a question.
             </p>
             <p className="mt-4 text-black/70 leading-relaxed max-w-xl">
-              I will take three hosts. Future Cast FM and Spacious already use
-              the system, and three outside shows is the number I can do
-              properly.
+              I will take three hosts. Future Cast FM already uses the
+              system, and three outside shows is the number I can do properly.
             </p>
             <div className="mt-8 flex flex-col items-start gap-3">
               <ApplyButton onGold />
